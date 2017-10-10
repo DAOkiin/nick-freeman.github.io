@@ -1,0 +1,546 @@
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" version="2.0"><channel><title>Nick Freeman</title><description>Full-Stack Developer</description><link>http://localhost:2368/</link><image><url>http://localhost:2368/favicon.png</url><title>Nick Freeman</title><link>http://localhost:2368/</link></image><generator>Ghost 1.9</generator><lastBuildDate>Tue, 10 Oct 2017 11:56:56 GMT</lastBuildDate><atom:link href="http://localhost:2368/rss/" rel="self" type="application/rss+xml"/><ttl>60</ttl><item><title>HowTo: Sample ruby application</title><description>&lt;div class="kg-card-markdown"&gt;&lt;p&gt;Создавая docker-образ для разработки на ruby, я столкнулся с тем, что на github нет возможности получить &lt;a href="https://ru.wikipedia.org/wiki/%D0%9A%D0%BE%D0%BD%D1%82%D1%80%D0%BE%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F_%D1%81%D1%83%D0%BC%D0%BC%D0%B0"&gt;контрольную сумму&lt;/a&gt; для файлов релизов. Проверка целостности скаченного архива во время сборки, на мой взгляд, является хорошей практикой. Для решения проблемы я создал простое приложение используя Sinatra и Heroku, этапы создания которого рассмотрены в&lt;/p&gt;&lt;/div&gt;</description><link>http://localhost:2368/howto-rack-based-ruby-application/</link><guid isPermaLink="false">59c3e811f7da4d5a8f315f90</guid><dc:creator>Nick Freeman</dc:creator><pubDate>Tue, 10 Oct 2017 11:54:00 GMT</pubDate><media:content url="http://localhost:2368/content/images/2017/10/ruby1.png" medium="image"/><content:encoded>&lt;div class="kg-card-markdown"&gt;&lt;img src="http://localhost:2368/content/images/2017/10/ruby1.png" alt="HowTo: Sample ruby application"&gt;&lt;p&gt;Создавая docker-образ для разработки на ruby, я столкнулся с тем, что на github нет возможности получить &lt;a href="https://ru.wikipedia.org/wiki/%D0%9A%D0%BE%D0%BD%D1%82%D1%80%D0%BE%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F_%D1%81%D1%83%D0%BC%D0%BC%D0%B0"&gt;контрольную сумму&lt;/a&gt; для файлов релизов. Проверка целостности скаченного архива во время сборки, на мой взгляд, является хорошей практикой. Для решения проблемы я создал простое приложение используя Sinatra и Heroku, этапы создания которого рассмотрены в этой статье.&lt;/p&gt;
+&lt;h2 id=""&gt;Немного о используемых инструментах&lt;/h2&gt;
+&lt;p&gt;Вам потребуется&lt;br&gt;
+Heroku CLI&lt;br&gt;
+Ruby 2.4.1&lt;br&gt;
+Sinatra&lt;br&gt;
+Rack&lt;br&gt;
+Webrick&lt;br&gt;
+Sqllite&lt;br&gt;
+Postgresql&lt;/p&gt;
+&lt;h3 id="helloworld"&gt;Hello World!&lt;/h3&gt;
+&lt;p&gt;Приложение я буду хостить на heroku, по этому добавим файл Procfile, который является стандартным entrypoint для этого сервиса. Так же добавим Gemfile, app.rb и сразу напишем тесты.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# app.rb
+require 'sinatra'
+
+get '/' do
+  'Hello World!'
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;# spec_helper.rb
+require 'rack/test'
+
+ENV['RACK_ENV'] = 'test'
+
+RSpec.configure do |config|
+  config.tty = true
+  config.formatter = :documentation
+  config.include Rack::Test::Methods
+
+  def app
+    Sinatra::Application
+  end
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;# app_spec.rb
+require './spec_helper'
+require './app'
+
+describe 'The HelloWorld App' do
+
+  it 'should greet' do
+    get '/'
+
+    expect(last_response).to be_ok
+    expect(last_response.body).to eq('Hello World!')
+  end
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;# Prockfile
+web: ruby app.rb -p $PORT
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;# Устанавливаем гемы
+$ bundle i
+# Запускаем тесты
+$ rspec app.rb
+# Тесты зелёные, создаём приложение на Heroku
+$ heroku create latest-sha
+# Добавим remote в git
+$ git remote add heroku https://git.heroku.com/latest-sha.git
+# Коммитим и пушим
+$ git add .
+$ git commit -m 'Init'
+$ git push heroku master
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Мы создали Hello Word приложение, написали тест и хелпер к ним, далее приступим к написанию приложения.&lt;/p&gt;
+&lt;h3 id=""&gt;Пишем приложение&lt;/h3&gt;
+&lt;p&gt;От приложения нам потребуются следующие вещи:&lt;br&gt;
+Возможность по адресу имя_github_аккаунта/имя_репозитория/имя_релиза/формат_архива получить контрольную сумму архива&lt;br&gt;
+Пример: &lt;code&gt;latest-sha.herokuapp.com/ruby/ruby/v2_4_1/tarball&lt;/code&gt;&lt;br&gt;
+Периодически проверять, что сохранен SHA для актуального архива релиза и актуальность списка релизов&lt;/p&gt;
+&lt;p&gt;Добавление репозиториев я решил реализовать вручную, для того чтобы не добавлять аутентификацию и во избежание усложнения приложения.&lt;/p&gt;
+&lt;p&gt;Доступные данные о количестве релизов в формате JSON возможно получить из &lt;a href="https://api.github.com/repos/ruby/ruby/tags"&gt;Github API&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Нам надо написать класс, который будет брать из БД адрес репозитория и парсить вышепреведенный JSON&lt;br&gt;
+name: имя релиза&lt;br&gt;
+zipball_url: URL zipball архива&lt;br&gt;
+tarball_url: URL tarball архива&lt;br&gt;
+commit_sha: контрольная сумма актуального коммита&lt;br&gt;
+После чего будет выкачивать эти архивы, получать контрольную сумму для них и сохранять все данные в БД.&lt;/p&gt;
+&lt;p&gt;Дополнительно в приложении нам понадобятся следующие вещи:&lt;br&gt;
+БД: для production используем postgresql, для test и development - sqlite3&lt;br&gt;
+Ruby-Make(rake) для работы с миграциями&lt;br&gt;
+Activerecord для работы с моделями&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# Gemfile
+source 'https://rubygems.org'
+ruby '2.4.0'
+
+gem 'sinatra'
+gem 'sinatra-activerecord'
+gem 'rake'
+
+group :production do
+  gem 'pg'
+end
+
+group :development, :test do
+  gem 'rack-test', require: 'rack/test'
+  gem 'rspec'
+  gem 'sqlite3'
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Добавим config/environment.rb в котором укажем настройки БД для конкретного environment и подключим его в &lt;code&gt;app.rb&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# config/environment.rb
+require 'sinatra/activerecord'
+
+configure :development do
+ set :database, 'sqlite3:dev.db'
+ set :show_exceptions, true
+end
+
+configure :test do
+ set :database, 'sqlite3:test.db'
+end
+
+# app.rb
+...
+require './config/environment'
+...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Добавим Rakefile&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# Rakefile
+require 'sinatra/activerecord/rake'
+require './app'
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Создадим БД для development и test окружения&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ bundle exec rake db:create
+$ bundle exec rake db:create RACK_ENV=test
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Нам понадобится 3 модели, Owner,  Repo и Tag&lt;br&gt;
+В папке models создадим файлы owner.rb, repo.rb и tag.rb&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#models/owner.rb
+class Owner &amp;lt; ActiveRecord::Base
+  has_many :repos
+end
+
+#models/repo.rb
+class Repo &amp;lt; ActiveRecord::Base
+    belongs_to :owner
+    has_many :tags
+end
+
+#models/tag.rb
+class Tag &amp;lt; ActiveRecord::Base
+  belongs_to :repo
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Подключаем их в environment.rb&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#config/environment.rb
+require 'sinatra/activerecord'
+Dir[&amp;quot;./models/*.rb&amp;quot;].each {|file| require file }
+...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Создаем пустые файлы миграций и заполняем их&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ bundle exec rake db:create_migration NAME=create_owners
+$ bundle exec rake db:create_migration NAME=create_repos
+$ bundle exec rake db:create_migration NAME=create_tags
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;class CreateOwners &amp;lt; ActiveRecord::Migration[5.1]
+  def change
+    create_table :owners do |t|
+      t.string :name
+    end
+  end
+end
+
+class CreateRepos &amp;lt; ActiveRecord::Migration[5.1]
+  def change
+    create_table :repos do |t|
+      t.string :name
+      t.integer :owner_id
+    end
+  end
+end
+
+class CreateTags &amp;lt; ActiveRecord::Migration[5.1]
+  def change
+    create_table :tags do |t|
+      t.string :name
+      t.string :zipball_url
+      t.string :tarball_url
+      t.string :zipsha
+      t.string :tarsha
+      t.string :commit_sha
+      t.integer :repo_id
+    end
+  end
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Создадим файл seeds.rb, в который добавим owner и repo&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# db/seeds.rb
+owner = Owner.create(name: 'ruby')
+repo = Repo.new(name: 'ruby')
+repo.owner = owner
+repo.save
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Выполним миграции и посеем данные&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ bundle exec rake db:migrate 
+$ bundle exec rake db:migrate RACK_ENV=test
+$ bundle exec rake db:seed
+$ bundle exec rake db:seed RACK_ENV=test
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Теперь нужно создать класс, который будет брать репозиторий, получать список тегов, загружать архивы и получать SHA256 для них, назовем его Checksum. Сначала напишем тесты.&lt;/p&gt;
+&lt;p&gt;В соответствии с заявленным функционалом, нам потребуется протестировать:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Скачивание и удаление файлов&lt;/li&gt;
+&lt;li&gt;Вычисление корректного SHA для файлов&lt;/li&gt;
+&lt;li&gt;Удаление не актуальных тегов&lt;/li&gt;
+&lt;li&gt;Проброс исключения в случае превышения лимита загрузок&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;# checksum_spec.rb
+require './spec_helper'
+require './app'
+require './checksum'
+
+RSpec.describe Checksum do
+  it 'should save and delete files'
+  it 'should return correct sha'
+  it 'should delete old tags'
+  it 'should throw error when file downloaded more than 3 times'
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Добавим файл checksum.rb и напишем класс Checksum.&lt;br&gt;
+Нам понадобятся следующие библиотеки:&lt;br&gt;
+open-uri - скачивание данных&lt;br&gt;
+json - работа с JSON&lt;br&gt;
+digest - создание контрольной суммы&lt;br&gt;
+logger - для логов&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-ruby"&gt;require 'open-uri'
+require 'json'
+require 'digest'
+require 'logger'
+
+class Checksum 
+
+  def initialize
+    @logger = Logger.new(STDOUT)
+    @logger.level = Logger::INFO
+  end
+  
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Напишем методы для скачивания, получения хеш-суммы и удаления файлов.&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-ruby"&gt;...
+  def load_file(file_name, link)
+    io = open(link).read
+    File.write(file_name, io)
+  end
+
+  def get_sha(file_name)
+    Digest::SHA256.file(file_name).hexdigest
+  end
+
+  def delete_files(arr)
+    arr.map {|file| File.delete(file) }
+  end
+...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Поскольку нужно точно убедиться в том, что файл скачался верно и хэш-сумма корректна, то файл нужно скачать минимум два раза. Но если после трёх скачиваний хэш каждый раз разный, то что-то пошло не так. Напишем метод verify, который будет запускать вышеописанные методы и отлавливать ошибки в момент верификации корректности хэш-суммы.&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-ruby"&gt;...
+  def verify(link, name)
+    files = []
+    sha_list = Hash.new(0)
+    stop = false
+    step = 0
+    @logger.info(&amp;quot;Verify #{name}. Looking for #{link}&amp;quot;)
+    begin
+      step += 1
+
+      raise RuntimeError.new('File loads more than 3 times') if step &amp;gt; 3
+      file_name = &amp;quot;#{name}#{step}&amp;quot;
+
+      load_file(file_name, link)
+      files.push(file_name)
+
+      sha_list[ get_sha(file_name) ] += 1
+      result_sha = sha_list.map{|k,v| k if v &amp;gt; 1}.compact[0]
+
+      if !result_sha.nil? &amp;amp;&amp;amp; step &amp;gt; 1
+        delete_files(files)
+        stop = true
+        return result_sha
+      end
+    rescue RuntimeError =&amp;gt; e
+      stop = true
+      delete_files(files)
+      @logger.warn( &amp;quot;#{e.message}: #{link}&amp;quot; )
+      raise e
+    rescue =&amp;gt; e
+      @logger.warn(e.message)
+      stop = true
+      delete_files(files)
+    end while !stop
+  end
+...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Добавим метод который проходящит по всем репозиториям, скачивает файлы тегов, верифицирует их сохраняет данные в БД.&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-ruby"&gt;  def start
+    Repo.all.to_a.each do |repo|
+      api_url = &amp;quot;https://api.github.com/repos/#{repo.owner.name}/#{repo.name}/tags&amp;quot;
+      git_tags = JSON.load(open(api_url))
+      actual_tags_names = sanitize_repo_tags(git_tags, repo)
+      git_tags.each do |git_tag|
+        Thread.new do 
+          tag = actual_tags_names.include?(git_tag['name']) ? repo.tags.select {|tag| tag.name == git_tag['name'] }[0] : repo.tags.new
+          if tag.commit_sha != git_tag['commit']['sha']
+            tag.name = git_tag['name']
+            tag.zipball_url = git_tag['zipball_url']
+            tag.tarball_url = git_tag['tarball_url']
+            tag.commit_sha = git_tag['commit']['sha']
+            tag.tarsha = verify(git_tag['tarball_url'], git_tag['name'])
+            tag.zipsha = verify(git_tag['zipball_url'], git_tag['name'])
+            if tag.save
+              @logger.info( &amp;quot;Succefully updated: #{repo.owner.name}/#{repo.name}: tag #{tag.name}&amp;quot; )
+            else
+              @logger.info( &amp;quot;Some error with: #{repo.owner.name}/#{repo.name}: tag #{tag.name}&amp;quot; )
+            end
+          end
+        end
+      end
+    end
+    Thread.list.each { |t| t.join if t != Thread.current }
+  end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Также необходим метод удаляющий неактуальные теги&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-ruby"&gt;  def sanitize_repo_tags(git_tags, repo)
+    old_tags = repo.tags.map(&amp;amp;:name) - git_tags.map {|d| d['name'] }
+    repo.tags.each { |tag| tag.destroy if old_tags.include?(tag.name) }
+    repo.tags.reject { |tag| old_tags.include?(tag.name) }.map { |tag| tag.name }
+  end
+
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Добавим тесты.&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-ruby"&gt;require './spec_helper'
+require './app'
+
+RSpec.describe Checksum do
+  before(:each) do
+    owner = Owner.create(name: 'ruby')
+    owner.repos.create(name: 'ruby')
+  end
+
+  before { allow(subject).to receive_message_chain(:open, :read).and_return(&amp;quot;some data&amp;quot;) }
+
+  it &amp;quot;should delete old tags&amp;quot; do
+    repo = Repo.first
+    repo.tags.create(name: 'old_tag')
+    new_tags = [{'name' =&amp;gt; 'new_tag' }]
+
+    subject.sanitize_repo_tags(new_tags, repo)
+    expect( repo.tags.where(name: 'old_tag') ).to be_empty
+  end
+
+  it 'should save and delete files' do
+    files_names = %w(1 2 3)
+
+    # [9, 9, 9] because of file lenght
+    expect( files_names.map { |n| subject.load_file(n, 'some link') } ).to eq( [9, 9, 9] )
+    expect( subject.delete_files( files_names ) ).to eq( [1, 1, 1] )
+  end
+
+  it 'should return correct sha' do
+    #sha for 'some data'
+    correct_sha = '1307990e6ba5ca145eb35e99182a9bec46531bc54ddf656a602c780fa0240dee'
+
+    expect( subject.verify('some url', 'file_name') ).to eq(correct_sha)
+  end
+
+  it 'should throw error when file downloaded more than 3 times' do
+    hex = Object.new
+    def hex.hexdigest ; Random.rand ; end
+
+    allow(Digest::SHA256).to receive_messages( :file =&amp;gt; hex )
+
+    expect{ subject.verify('some link', 'file_name') }.to raise_error(RuntimeError)
+  end
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;</content:encoded></item><item><title>Docker4Dev: Часть 3.  Ежедневные советы</title><description>&lt;div class="kg-card-markdown"&gt;&lt;p&gt;В третьей части я собрал советы связанные с ежедневной работой в Docker.&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://hackernoon.com/everyday-hacks-for-docker-37e92188d9e8"&gt;https://hackernoon.com/everyday-hacks-for-docker-37e92188d9e8&lt;/a&gt;&lt;/p&gt;
+&lt;h1 id=""&gt;Версионирование или временные метки&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;Обновляйте базовый образ сохраняя предыдущую версию&lt;/li&gt;
+&lt;li&gt;Храните последние N образов в хабе&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code class="language-bash"&gt;╰─&amp;gt; docker images
+
+REPOSITORY            TAG      IMAGE ID        CREATED          SIZE
+yourcompany/baseimage 0.0.4    2ff3b426bbaa    2 months ago&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description><link>http://localhost:2368/docker4dev-chast-3/</link><guid isPermaLink="false">59bbea7cacd6f9180ec9cdb7</guid><dc:creator>Nick Freeman</dc:creator><pubDate>Tue, 10 Oct 2017 11:50:44 GMT</pubDate><media:content url="http://localhost:2368/content/images/2017/10/14098888813_1047e39f08--1--2.jpg" medium="image"/><content:encoded>&lt;div class="kg-card-markdown"&gt;&lt;img src="http://localhost:2368/content/images/2017/10/14098888813_1047e39f08--1--2.jpg" alt="Docker4Dev: Часть 3.  Ежедневные советы"&gt;&lt;p&gt;В третьей части я собрал советы связанные с ежедневной работой в Docker.&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://hackernoon.com/everyday-hacks-for-docker-37e92188d9e8"&gt;https://hackernoon.com/everyday-hacks-for-docker-37e92188d9e8&lt;/a&gt;&lt;/p&gt;
+&lt;h1 id=""&gt;Версионирование или временные метки&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;Обновляйте базовый образ сохраняя предыдущую версию&lt;/li&gt;
+&lt;li&gt;Храните последние N образов в хабе&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code class="language-bash"&gt;╰─&amp;gt; docker images
+
+REPOSITORY            TAG      IMAGE ID        CREATED          SIZE
+yourcompany/baseimage 0.0.4    2ff3b426bbaa    2 months ago     188MB
+yourcompany/baseimage 0.0.3    b84ede6bed10    8 months ago     190MB
+yourcompany/baseimage 0.0.2    c54a2cc56cbb    13 months ago    163MB
+yourcompany/baseimage 0.0.1    e71a025498d5    20 months ago    158MB
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;br&gt;&lt;hr&gt;&lt;/p&gt;
+&lt;h1 id=""&gt;Не храните мусор&lt;/h1&gt;
+&lt;pre&gt;&lt;code class="language-docker"&gt;docker container prune   # Удалить остановленные контейнеры
+docker volume prune      # Удалить не используемые volumes
+docker image prune       # Удалить не используемые образы
+# Опасно, можно потерять volumes с данными
+docker system prune      # Вышеперечисленное в порядке: containers, volumes, images
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;br&gt;&lt;hr&gt;&lt;/p&gt;
+&lt;h1 id="dockerdaemon"&gt;Настройка Docker daemon и сохранение конфигурации&lt;/h1&gt;
+&lt;p&gt;&lt;code&gt;/usr/bin/dockerd&lt;/code&gt; - persistent процесс, управляющий контейнерами.&lt;br&gt;
+Настройки текущего процесса можно узнать при помощи &lt;code&gt;docker info&lt;/code&gt;&lt;br&gt;
+Изменить стандартное поведение можно при помощи ключей во время запуска &lt;code&gt;dockerd&lt;/code&gt; или при помощи конфигурационного файла &lt;code&gt;daemon.json&lt;/code&gt;.&lt;br&gt;
+&lt;a href="https://docs.docker.com/engine/reference/commandline/dockerd/"&gt;Объяснение каждого конфигурационного ключа&lt;/a&gt;&lt;br&gt;
+Расположение конф. файла для &lt;code&gt;dockerd&lt;/code&gt; определяется в &lt;code&gt;/etc/default/docker&lt;/code&gt;. Добавьте в него строку &lt;code&gt;DOCKER_OPTS=&amp;quot;--config-file=/etc/docker/daemon.json&amp;quot;&lt;/code&gt;&lt;br&gt;
+Пример настроек &lt;code&gt;daemon.json&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-json"&gt;{
+  &amp;quot;log-driver&amp;quot;: &amp;quot;json-file&amp;quot;,
+  &amp;quot;log-opts&amp;quot;: {
+    &amp;quot;max-size&amp;quot;: &amp;quot;10m&amp;quot;,
+    &amp;quot;max-file&amp;quot;: &amp;quot;2&amp;quot;
+  },
+  &amp;quot;userns-remap&amp;quot;: &amp;quot;1000:1000&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Мы включили ротацию логов, ограничив двумя кол-во файлов, выставили лимит в 10mb и включили переопределние прав на файлы в volumes.&lt;br&gt;
+Правда с последней опцией спешить не советую, сперва ознакомтесь со статьей &lt;a href="https://blog.amartynov.ru/docker-userns-remap/"&gt;Docker: user namespaces&lt;/a&gt;&lt;br&gt;
+На мой взгляд, правильнее работать под нужным пользователем в самом контейнере и исползовать &lt;code&gt;gosu&lt;/code&gt;.&lt;/p&gt;
+&lt;h1 id=""&gt;Следите за контейнерами&lt;/h1&gt;
+&lt;pre&gt;&lt;code class="language-bash"&gt;#Каждые 2 секунды обновлять данные о контейнерах
+watch -n 2 'docker ps --format &amp;quot;table {{.ID}}\t {{.Image}}\t {{.Status}}&amp;quot;'
+&lt;/code&gt;&lt;/pre&gt;
+&lt;br&gt;
+&lt;hr&gt;
+&lt;/div&gt;</content:encoded></item><item><title>Docker4Dev: Часть 2. Правильная сборка образов</title><description>&lt;div class="kg-card-markdown"&gt;&lt;p&gt;В этой статье я собрал &lt;em&gt;best practice&lt;/em&gt; по сборке образов в контексте микросервисной архитектуры.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h1 id=""&gt;Минимизируйте размер образа&lt;/h1&gt;
+&lt;p&gt;Меньше образ - меньше времени тратится на разработку, тестирование и деплой.&lt;/p&gt;
+&lt;h3 id=""&gt;Минимальное количество слоев&lt;/h3&gt;
+&lt;p&gt;Минимизация количества слоёв считается одной из best practice при работе с Docker. В самом Docker, в качестве защиты от&lt;/p&gt;&lt;/div&gt;</description><link>http://localhost:2368/docker4dev-chast-2/</link><guid isPermaLink="false">599da5e178627d311589b848</guid><dc:creator>Nick Freeman</dc:creator><pubDate>Thu, 24 Aug 2017 18:31:56 GMT</pubDate><media:content url="http://localhost:2368/content/images/2017/10/14098888813_1047e39f08--1--1.jpg" medium="image"/><content:encoded>&lt;div class="kg-card-markdown"&gt;&lt;img src="http://localhost:2368/content/images/2017/10/14098888813_1047e39f08--1--1.jpg" alt="Docker4Dev: Часть 2. Правильная сборка образов"&gt;&lt;p&gt;В этой статье я собрал &lt;em&gt;best practice&lt;/em&gt; по сборке образов в контексте микросервисной архитектуры.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h1 id=""&gt;Минимизируйте размер образа&lt;/h1&gt;
+&lt;p&gt;Меньше образ - меньше времени тратится на разработку, тестирование и деплой.&lt;/p&gt;
+&lt;h3 id=""&gt;Минимальное количество слоев&lt;/h3&gt;
+&lt;p&gt;Минимизация количества слоёв считается одной из best practice при работе с Docker. В самом Docker, в качестве защиты от деградации производительности, количество слоёв ограничено числом &lt;strong&gt;127&lt;/strong&gt;.&lt;/p&gt;
+&lt;h3 id=""&gt;Минимальный размер слоя&lt;/h3&gt;
+&lt;p&gt;Каждая команда создает новый слой в финальном образе.&lt;br&gt;
+Удалить файл из образа полностью можно только в пределах одного слоя, т.е. удаление файла в последующих слоях просто сделает его недоступным, не уменьшая размер образа.&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-docker"&gt;#Неверно
+RUN apt-get -qq update
+RUN apt-get install -qq -y some-dependency
+RUN ...
+RUN apt-get remove -qq -y some-dependency
+
+#Верно
+RUN apt-get -qq update \
+ &amp;amp;&amp;amp; apt-get install -qq -y some-dependency \
+ &amp;amp;&amp;amp; ... \
+ &amp;amp;&amp;amp; apt-get remove -qq -y some-dependency  
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Невозможность удаления файла в последующих слоях так же относится к командам &lt;code&gt;ADD&lt;/code&gt; \ &lt;code&gt;COPY&lt;/code&gt;. Если есть необходимость копировать какие-то файлы, обрабатывать их и оставлять в контейнере только результат работы, то используйте multistage builds.&lt;br&gt;
+Также не стоит добавлять те файлы, которые не требуются для работы приложения, не забывайте про использование &lt;code&gt;.dockerignore&lt;/code&gt;.&lt;/p&gt;
+&lt;h3 id="baseimage"&gt;Минимальный размер baseimage&lt;/h3&gt;
+&lt;p&gt;Используйте в качестве основы для своего образа Alpine Linux, дистрибутив размером около 4MB, ориентированный на безопасность, легковесность и нетребовательность к ресурсам.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h1 id="root"&gt;Не сидите под root&lt;/h1&gt;
+&lt;p&gt;Большинство образов доступных в docker hub собирается из под root, привнося с собой проблемы с правами в shared volumes и потенциальные проблемы с безопасностью. Создавайте пользователя с нужными UID/GID во время сборки образа и следите за правами доступа этого UID за пределами контейнера.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h1 id="entrypoint"&gt;Не забывайте про entrypoint&lt;/h1&gt;
+&lt;p&gt;При написании Dockerfile для указания точки входа в контейнер возможно использовать команды ENTRYPOINT и CMD. Но между ними есть существенные различия.&lt;br&gt;
+Разница заключается в том, что ENTRYPOINT более полно отвечает понятию &amp;quot;точка входа&amp;quot;. ENTRYPOINT принимает в качестве аргумента команду указанную при старте контейнера или, в случае отсутствия онной, команду указанную в CMD. Ну или в случае отсутствия CMD просто выполнится ENTRYPOINT. ENTRYPOINT дает множество возможностей управления поведением контейнера при старте, например с помощью shell-скрипта можно явно указать разрешённые команды.&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-docker"&gt;FROM alpine
+COPY ./entrypoint.sh /
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT [&amp;quot;/entrypoint.sh&amp;quot;]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class="language-bash"&gt;#!/bin/sh
+echo &amp;quot;Starting with UID : $(id -u $whoami)&amp;quot;
+echo &amp;quot;$@&amp;quot;  # $@ - команда, переданная в entrypoint.sh
+if [ $1 = 'echo' ]; then  # $1 - первый аргумент
+  exec &amp;quot;$@&amp;quot; 
+else
+  echo 'Invalid command'
+fi
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class="language-bash"&gt;╰─&amp;gt; docker run --rm -it test:latest echo 'hello'
+  Starting with UID : 0
+  echo hello
+  hello
+╰─&amp;gt; docker run --rm -it test:latest whoami
+  Starting with UID : 0
+  whoami
+  Invalid command
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Важно помнить, что предпочтительной формой для команд &lt;code&gt;ENTRYPOINT&lt;/code&gt; и &lt;code&gt;CMD&lt;/code&gt; является форма &lt;em&gt;exec&lt;/em&gt;, а не &lt;em&gt;shell&lt;/em&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class="language-docker"&gt;# Два режима работы: Shell &amp;amp; Exec
+# Формат shell
+ENTRYPOINT echo &amp;quot;Starting with UID : $(id -u $whoami)&amp;quot;
+CMD echo &amp;quot;Hello there&amp;quot;
+
+# Формат exec, более предпочтительный по целому ряду причин
+ENTRYPOINT [&amp;quot;echo&amp;quot;, &amp;quot;Starting with UID : $(id -u $whoami)&amp;quot;]
+CMD [&amp;quot;echo&amp;quot;, &amp;quot;Hello $(whoami)!&amp;quot;]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=""&gt;Используйте переменные окружения во время сборки&lt;/h1&gt;
+&lt;p&gt;Команда &lt;code&gt;ARG&lt;/code&gt; в Dockerfile позволяет передать некие переменные в образ во время его сборки. Это может быть указание версии, текущее время или любая переменная окружения по вашему желанию.&lt;br&gt;
+&lt;code&gt;ВНИМАНИЕ! Не используйте эту фичу для передачи секретной информации в образ! Все команды Dockerfile публичны!&lt;/code&gt;&lt;/p&gt;
+&lt;/div&gt;</content:encoded></item><item><title>Docker4Dev: Часть 1. Основные концепции</title><description>&lt;div class="kg-card-markdown"&gt;&lt;p&gt;Эта статья - первая в цикле статей про использование Docker для разработки и в ней я предлагаю рассмотреть важные концепции и правила экосистемы Docker, которых следует придерживаться для избежания различных проблем.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h1 id=""&gt;Один контейнер - одна сущность&lt;/h1&gt;
+&lt;p&gt;Если вы встречали упоминания о том, что в контейнере должен быть запущен обязательно один&lt;/p&gt;&lt;/div&gt;</description><link>http://localhost:2368/mastering-docker-vazhnyie-momienty/</link><guid isPermaLink="false">599cf68467316a5538efcfac</guid><dc:creator>Nick Freeman</dc:creator><pubDate>Wed, 23 Aug 2017 03:30:05 GMT</pubDate><media:content url="http://localhost:2368/content/images/2017/10/14098888813_1047e39f08--1-.jpg" medium="image"/><content:encoded>&lt;div class="kg-card-markdown"&gt;&lt;img src="http://localhost:2368/content/images/2017/10/14098888813_1047e39f08--1-.jpg" alt="Docker4Dev: Часть 1. Основные концепции"&gt;&lt;p&gt;Эта статья - первая в цикле статей про использование Docker для разработки и в ней я предлагаю рассмотреть важные концепции и правила экосистемы Docker, которых следует придерживаться для избежания различных проблем.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h1 id=""&gt;Один контейнер - одна сущность&lt;/h1&gt;
+&lt;p&gt;Если вы встречали упоминания о том, что в контейнере должен быть запущен обязательно один процесс, то это не так. Философия Docker предрасполагает к микросервисной архитектуре, но не к принудительному разделению процессов по контейнерам. Если вы твердо уверены, что в вашем случае необходимо держать N+1 процессов в одном контейнере, дерзайте! Но в таком случае хотя бы позаботьтесь о наличии супервизора для корректного наследования процессов(предотвращения появления зомби-процессов) и их корректного завершения.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h1 id=""&gt;Контейнеры должны быть эфемерными(одноразовыми)&lt;/h1&gt;
+&lt;p&gt;Контейнеры не должны хранить состояние приложение и всегда быть готовыми к тому, что их сейчас уничтожат и создадут новую копию. Все данные, которые изменяются в процессе работы, необходимо хранить таким образом, чтобы при остановке контейнера они остались целыми. Это правило заставлят задуматься над тем, как организовать работу БД приложения.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h1 id=""&gt;Изолированность&lt;/h1&gt;
+&lt;p&gt;Docker дает замечательную возможность построить систему, где каждый элемент имеет доступ ровно к тому, что ему необходимо. Вы можете открыть нужные порты, используя UID/GID назначить пользователям из контейнера доступ только к определенным папкам на хосте, ограничить контейнер определенной сетью.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h1 id=""&gt;Управление ресурсами&lt;/h1&gt;
+&lt;p&gt;Кроме ограничения доступа, вы можете с легкостью указать количество памяти, ограничить доступ к ядрам CPU или задать &amp;quot;вес&amp;quot; процесса при доступе к CPU. Чтобы понять сколько ресурсов требуется приложению, используйте метрики приложения.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h1 id=""&gt;Версионирование&lt;/h1&gt;
+&lt;p&gt;Во время разработки зависимости необходимые для проекта могут обновляться, добавляться или удаляться. И бывает такое, что необходимо запустить код годичной давности. С Docker это очень просто! Просто используйте версионирование для своих образов, и храните готовое к запуску окружение в docker-registry, за секунды получая нужное окружение.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h1 id=""&gt;Следите за безопасностью&lt;/h1&gt;
+&lt;p&gt;Здравствуйте, вы в Интернете!&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Никому не доверяйте&lt;/li&gt;
+&lt;li&gt;Если вы решили использовать чей-то готовый образ, то используйте только &lt;a href="https://hub.docker.com/explore/"&gt;доверенные образы Docker&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Не работайте под root даже внутри контейнера&lt;/li&gt;
+&lt;li&gt;Если приложение позволяет, используйте в качестве базового образа легковесный alpine, в котором нет лишних зависимостей и, соответственно, принесенных ими потенциальных уязвимостей&lt;/li&gt;
+&lt;li&gt;Удаляйте ненужные зависимости после сборки&lt;/li&gt;
+&lt;li&gt;Следите за обновлениями родительских образов и зависимостей и своевременно обновляйтесь&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr&gt;
+&lt;h1 id=""&gt;Логи&lt;/h1&gt;
+&lt;p&gt;Анализ логов предоставляет возможность получить информацию об ошибках, безопасности, проводить A/B тестирование, анализировать производительность и нагрузку. Т.е. сложно переоценить ценность логов.&lt;br&gt;
+Но поскольку Docker - многоуровневая сущность, то обработка логов даже для простого приложения - нетривиальная задача.&lt;br&gt;
+Популярным решением является ELK-стек.&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;Статья дополняется...&lt;/p&gt;
+&lt;/div&gt;</content:encoded></item></channel></rss>

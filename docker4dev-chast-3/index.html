@@ -1,0 +1,276 @@
+
+<head>
+    <meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+<title>Docker4Dev: Часть 3.  Ежедневные советы</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<link rel="stylesheet" type="text/css" href="../assets/css/styles.css?v=cad2a2774a">
+<link href="https://fonts.googleapis.com/css?family=Merriweather:400,700,700italic,400italic" rel="stylesheet">
+    <link rel="shortcut icon" href="../favicon.png" type="image/png">
+    <link rel="canonical" href="index.html">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <link rel="amphtml" href="amp/index.html">
+    
+    <meta property="og:site_name" content="Nick Freeman">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Docker4Dev: Часть 3.  Ежедневные советы">
+    <meta property="og:description" content="В третьей части я собрал советы связанные с ежедневной работой в Docker. https://hackernoon.com/everyday-hacks-for-docker-37e92188d9e8 Версионирование или временные метки Обновляйте базовый образ сохраняя предыдущую версию Храните последние N образов в хабе ╰─&amp;gt; docker images REPOSITORY            TAG      IMAGE ID        CREATED          SIZE yourcompany/baseimage 0.0.4    2ff3b426bbaa    2 months ago">
+    <meta property="og:url" content="http://localhost:2368/docker4dev-chast-3/">
+    <meta property="og:image" content="http://localhost:2368/content/images/2017/10/14098888813_1047e39f08--1--2.jpg">
+    <meta property="article:published_time" content="2017-10-10T11:50:44.000Z">
+    <meta property="article:modified_time" content="2017-10-10T11:52:41.000Z">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Docker4Dev: Часть 3.  Ежедневные советы">
+    <meta name="twitter:description" content="В третьей части я собрал советы связанные с ежедневной работой в Docker. https://hackernoon.com/everyday-hacks-for-docker-37e92188d9e8 Версионирование или временные метки Обновляйте базовый образ сохраняя предыдущую версию Храните последние N образов в хабе ╰─&amp;gt; docker images REPOSITORY            TAG      IMAGE ID        CREATED          SIZE yourcompany/baseimage 0.0.4    2ff3b426bbaa    2 months ago">
+    <meta name="twitter:url" content="http://localhost:2368/docker4dev-chast-3/">
+    <meta name="twitter:image" content="http://localhost:2368/content/images/2017/10/14098888813_1047e39f08--1--2.jpg">
+    <meta name="twitter:label1" content="Written by">
+    <meta name="twitter:data1" content="Nick Freeman">
+    <meta property="og:image:width" content="400">
+    <meta property="og:image:height" content="331">
+    
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": "Nick Freeman",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "http://localhost:2368/content/images/2017/10/01.png",
+            "width": 60,
+            "height": 60
+        }
+    },
+    "author": {
+        "@type": "Person",
+        "name": "Nick Freeman",
+        "url": "http://localhost:2368/author/nick/",
+        "sameAs": []
+    },
+    "headline": "Docker4Dev: Часть 3.  Ежедневные советы",
+    "url": "http://localhost:2368/docker4dev-chast-3/",
+    "datePublished": "2017-10-10T11:50:44.000Z",
+    "dateModified": "2017-10-10T11:52:41.000Z",
+    "image": {
+        "@type": "ImageObject",
+        "url": "http://localhost:2368/content/images/2017/10/14098888813_1047e39f08--1--2.jpg",
+        "width": 400,
+        "height": 331
+    },
+    "description": "В третьей части я собрал советы связанные с ежедневной работой в Docker. https://hackernoon.com/everyday-hacks-for-docker-37e92188d9e8 Версионирование или временные метки Обновляйте базовый образ сохраняя предыдущую версию Храните последние N образов в хабе ╰─&amp;gt; docker images REPOSITORY            TAG      IMAGE ID        CREATED          SIZE yourcompany/baseimage 0.0.4    2ff3b426bbaa    2 months ago",
+    "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "http://localhost:2368/"
+    }
+}
+    </script>
+
+    <script type="text/javascript" src="../public/ghost-sdk.js?v=cad2a2774a"></script>
+<script type="text/javascript">
+ghost.init({
+	clientId: "ghost-frontend",
+	clientSecret: "f0656e80b35b"
+});
+</script>
+    <meta name="generator" content="Ghost 1.9">
+    <link rel="alternate" type="application/rss+xml" title="Nick Freeman" href="../rss/index.html">
+    <link href="https://cdn.rawgit.com/nick-freeman/4ac4f363107d3c65ad9a13813dce5625/raw/adcbf9eee5e51cbbe641ccfe2e9ba04380a68db3/prism.css" rel="stylesheet">
+</head>
+
+<body class="post-template">
+    <div id="site-wrapper" class="c-site-wrapper">
+        <div id="site-viewport" class="c-site-viewport">
+            <div id="site-sidebar" class="c-site-sidebar">
+    <div class="c-sidebar-header" style="background-image: url(https://casper.ghost.org/v1.0.0/images/blog-cover.jpg)">
+        <a class="c-sidebar-header__link" href="../" title="Nick Freeman">
+            <img class="c-sidebar-header__image" src="../content/images/2017/10/01.png" alt="Nick Freeman">
+        </a>
+    </div>
+
+    <h2 class="c-sidebar-blog-title">
+        <a class="c-sidebar-blog-title__link" href="../" title="Nick Freeman">
+            Nick Freeman
+        </a>
+    </h2>
+
+    <h2 class="c-sidebar-blog-description">
+        Full-Stack Developer
+    </h2>
+
+    <div class="c-sidebar-contact-links">
+        <a class="c-sidebar-contact-links__item" href="index.html#" target="_blank">
+            github
+        </a>
+
+        <a class="c-sidebar-contact-links__item" href="index.html#" target="_blank">
+            twitter
+        </a>
+
+        <a class="c-sidebar-contact-links__item" href="index.html#" target="_blank">
+            linkedin
+        </a>
+
+        <a class="c-sidebar-contact-links__item" href="index.html#">
+            email
+        </a>
+    </div>
+
+    <div class="c-sidebar-navigation">
+        <a class="c-sidebar-navigation__item" href="http://blog.nfreeman.pw/" title="Less words, more data">
+            Less words, more data
+        </a>
+</div>
+
+    <div class="c-sidebar-promotion-links">
+        <a class="c-sidebar-promotion-links__item" href="index.html#" target="_blank">
+            • Link
+        </a>
+
+        <a class="c-sidebar-promotion-links__item" href="index.html#" target="_blank">
+            • Link
+        </a>
+    </div>
+</div>
+            <div id="site-content" class="c-site-content">
+                <div class="c-mobile-header">
+    <a href="index.html#" id="mobile-menu" class="c-mobile-header__link" title="Menu">
+        Menu
+    </a>
+
+    <a class="c-mobile-header__logo" href="../" title="Nick Freeman">
+        <img class="c-mobile-header__logo__image" src="../content/images/2017/10/01.png" alt="Nick Freeman">
+    </a>
+</div>                    <div class="c-post-view post">
+        <div class="c-page-title">
+            <h1 class="c-page-title__heading">
+                Docker4Dev: Часть 3.  Ежедневные советы
+            </h1>
+
+            <div class="c-post-view-meta">
+    October 10, 2017
+
+</div>        </div>
+
+        <div class="c-post-view__content">
+            <div class="kg-card-markdown"><p>В третьей части я собрал советы связанные с ежедневной работой в Docker.</p>
+<p><a href="https://hackernoon.com/everyday-hacks-for-docker-37e92188d9e8">https://hackernoon.com/everyday-hacks-for-docker-37e92188d9e8</a></p>
+<h1 id="">Версионирование или временные метки</h1>
+<ul>
+<li>Обновляйте базовый образ сохраняя предыдущую версию</li>
+<li>Храните последние N образов в хабе</li>
+</ul>
+<pre><code class="language-bash">╰─&gt; docker images
+
+REPOSITORY            TAG      IMAGE ID        CREATED          SIZE
+yourcompany/baseimage 0.0.4    2ff3b426bbaa    2 months ago     188MB
+yourcompany/baseimage 0.0.3    b84ede6bed10    8 months ago     190MB
+yourcompany/baseimage 0.0.2    c54a2cc56cbb    13 months ago    163MB
+yourcompany/baseimage 0.0.1    e71a025498d5    20 months ago    158MB
+</code></pre>
+<p><br></p><hr>
+<h1 id="">Не храните мусор</h1>
+<pre><code class="language-docker">docker container prune   # Удалить остановленные контейнеры
+docker volume prune      # Удалить не используемые volumes
+docker image prune       # Удалить не используемые образы
+# Опасно, можно потерять volumes с данными
+docker system prune      # Вышеперечисленное в порядке: containers, volumes, images
+</code></pre>
+<p><br></p><hr>
+<h1 id="dockerdaemon">Настройка Docker daemon и сохранение конфигурации</h1>
+<p><code>/usr/bin/dockerd</code> - persistent процесс, управляющий контейнерами.<br>
+Настройки текущего процесса можно узнать при помощи <code>docker info</code><br>
+Изменить стандартное поведение можно при помощи ключей во время запуска <code>dockerd</code> или при помощи конфигурационного файла <code>daemon.json</code>.<br>
+<a href="https://docs.docker.com/engine/reference/commandline/dockerd/">Объяснение каждого конфигурационного ключа</a><br>
+Расположение конф. файла для <code>dockerd</code> определяется в <code>/etc/default/docker</code>. Добавьте в него строку <code>DOCKER_OPTS="--config-file=/etc/docker/daemon.json"</code><br>
+Пример настроек <code>daemon.json</code>:</p>
+<pre><code class="language-json">{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "2"
+  },
+  "userns-remap": "1000:1000"
+}
+</code></pre>
+<p>Мы включили ротацию логов, ограничив двумя кол-во файлов, выставили лимит в 10mb и включили переопределние прав на файлы в volumes.<br>
+Правда с последней опцией спешить не советую, сперва ознакомтесь со статьей <a href="https://blog.amartynov.ru/docker-userns-remap/">Docker: user namespaces</a><br>
+На мой взгляд, правильнее работать под нужным пользователем в самом контейнере и исползовать <code>gosu</code>.</p>
+<h1 id="">Следите за контейнерами</h1>
+<pre><code class="language-bash">#Каждые 2 секунды обновлять данные о контейнерах
+watch -n 2 'docker ps --format "table {{.ID}}\t {{.Image}}\t {{.Status}}"'
+</code></pre>
+<br>
+<hr>
+</div>
+        </div>
+
+        <div class="c-post-view__footer">
+            <div class="c-post-view-share">
+    <a class="c-post-view-share__item c-post-view-share__item--twitter" href="https://twitter.com/intent/tweet?text=Docker4Dev%3A%20%D0%A7%D0%B0%D1%81%D1%82%D1%8C%203.%20%20%D0%95%D0%B6%D0%B5%D0%B4%D0%BD%D0%B5%D0%B2%D0%BD%D1%8B%D0%B5%20%D1%81%D0%BE%D0%B2%D0%B5%D1%82%D1%8B&amp;url=http://localhost:2368/docker4dev-chast-3/" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        Share on Twitter
+    </a>
+    <a class="c-post-view-share__item c-post-view-share__item--facebook" href="https://www.facebook.com/sharer/sharer.php?u=http://localhost:2368/docker4dev-chast-3/" onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        Share on Facebook
+    </a>
+    <a class="c-post-view-share__item c-post-view-share__item--google" href="https://plus.google.com/share?url=http://localhost:2368/docker4dev-chast-3/" onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+        Share on Google+
+    </a>
+</div>            <div class="c-post-view-prev-next">
+            <article class="c-post-view-prev-next__item post">
+                <a class="c-post-view-prev-next__image" href="../howto-rack-based-ruby-application/" title="HowTo: Sample ruby application">
+                    <img class="c-post-view-prev-next__image__img" src="../content/images/2017/10/ruby1.png" alt="HowTo: Sample ruby application">
+                    <span class="c-post-view-prev-next__image__label c-post-view-prev-next__image__label--next">
+                        Next Post
+                    </span>
+                </a>
+
+                <h3 class="c-post-view-prev-next__title">
+                    <a href="../howto-rack-based-ruby-application/" title="HowTo: Sample ruby application">HowTo: Sample ruby application</a>
+                </h3>
+            </article>
+
+            <article class="c-post-view-prev-next__item post">
+                <a class="c-post-view-prev-next__image" href="../docker4dev-chast-2/" title="Docker4Dev: Часть 2. Правильная сборка образов">
+                    <img class="c-post-view-prev-next__image__img" src="../content/images/2017/10/14098888813_1047e39f08--1--1.jpg" alt="Docker4Dev: Часть 2. Правильная сборка образов">
+                    <span class="c-post-view-prev-next__image__label c-post-view-prev-next__image__label--previous">
+                        Previous Post
+                    </span>
+                </a>
+
+                <h3 class="c-post-view-prev-next__title">
+                    <a href="../docker4dev-chast-2/" title="Docker4Dev: Часть 2. Правильная сборка образов">Docker4Dev: Часть 2. Правильная сборка образов</a>
+                </h3>
+            </article>
+</div>            <!--<div class="c-disqus-comments">
+    <div id="disqus_thread">
+        <a class="c-disqus-comments__button" onclick="WillowGhostTheme.loadDisqusComments();">
+            Load Comments
+        </a>
+    </div>
+    <script>
+        var WillowGhostTheme = {
+            loadDisqusComments: function () {
+
+                var d = document, s = d.createElement('script');
+                s.src = '//yourssite.disqus.com/embed.js';
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+
+            }
+        };
+    </script>
+</div>-->
+        </div>
+    </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/scripts.js?v=cad2a2774a"></script>
+    <script type="text/javascript" src="https://cdn.rawgit.com/nick-freeman/4263a9215bc3153c0a8cb44339260c64/raw/14ce0454b32fb236a1b6c21d139d2421e69abdbf/prism.js"></script>
+</body>

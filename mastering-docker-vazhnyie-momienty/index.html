@@ -1,0 +1,256 @@
+
+<head>
+    <meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+<title>Docker4Dev: Часть 1. Основные концепции</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<link rel="stylesheet" type="text/css" href="../assets/css/styles.css?v=cad2a2774a">
+<link href="https://fonts.googleapis.com/css?family=Merriweather:400,700,700italic,400italic" rel="stylesheet">
+    <link rel="shortcut icon" href="../favicon.png" type="image/png">
+    <link rel="canonical" href="index.html">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <link rel="amphtml" href="amp/index.html">
+    
+    <meta property="og:site_name" content="Nick Freeman">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Docker4Dev: Часть 1. Основные концепции">
+    <meta property="og:description" content="Эта статья - первая в цикле статей про использование Docker для разработки и в ней я предлагаю рассмотреть важные концепции и правила экосистемы Docker, которых следует придерживаться для избежания различных проблем. Один контейнер - одна сущность Если вы встречали упоминания о том, что в контейнере должен быть запущен обязательно один">
+    <meta property="og:url" content="http://localhost:2368/mastering-docker-vazhnyie-momienty/">
+    <meta property="og:image" content="http://localhost:2368/content/images/2017/10/14098888813_1047e39f08--1-.jpg">
+    <meta property="article:published_time" content="2017-08-23T03:30:05.000Z">
+    <meta property="article:modified_time" content="2017-10-10T11:52:03.000Z">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Docker4Dev: Часть 1. Основные концепции">
+    <meta name="twitter:description" content="Эта статья - первая в цикле статей про использование Docker для разработки и в ней я предлагаю рассмотреть важные концепции и правила экосистемы Docker, которых следует придерживаться для избежания различных проблем. Один контейнер - одна сущность Если вы встречали упоминания о том, что в контейнере должен быть запущен обязательно один">
+    <meta name="twitter:url" content="http://localhost:2368/mastering-docker-vazhnyie-momienty/">
+    <meta name="twitter:image" content="http://localhost:2368/content/images/2017/10/14098888813_1047e39f08--1-.jpg">
+    <meta name="twitter:label1" content="Written by">
+    <meta name="twitter:data1" content="Nick Freeman">
+    <meta property="og:image:width" content="400">
+    <meta property="og:image:height" content="331">
+    
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": "Nick Freeman",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "http://localhost:2368/content/images/2017/10/01.png",
+            "width": 60,
+            "height": 60
+        }
+    },
+    "author": {
+        "@type": "Person",
+        "name": "Nick Freeman",
+        "url": "http://localhost:2368/author/nick/",
+        "sameAs": []
+    },
+    "headline": "Docker4Dev: Часть 1. Основные концепции",
+    "url": "http://localhost:2368/mastering-docker-vazhnyie-momienty/",
+    "datePublished": "2017-08-23T03:30:05.000Z",
+    "dateModified": "2017-10-10T11:52:03.000Z",
+    "image": {
+        "@type": "ImageObject",
+        "url": "http://localhost:2368/content/images/2017/10/14098888813_1047e39f08--1-.jpg",
+        "width": 400,
+        "height": 331
+    },
+    "description": "Эта статья - первая в цикле статей про использование Docker для разработки и в ней я предлагаю рассмотреть важные концепции и правила экосистемы Docker, которых следует придерживаться для избежания различных проблем. Один контейнер - одна сущность Если вы встречали упоминания о том, что в контейнере должен быть запущен обязательно один",
+    "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "http://localhost:2368/"
+    }
+}
+    </script>
+
+    <script type="text/javascript" src="../public/ghost-sdk.js?v=cad2a2774a"></script>
+<script type="text/javascript">
+ghost.init({
+	clientId: "ghost-frontend",
+	clientSecret: "f0656e80b35b"
+});
+</script>
+    <meta name="generator" content="Ghost 1.9">
+    <link rel="alternate" type="application/rss+xml" title="Nick Freeman" href="../rss/index.html">
+    <link href="https://cdn.rawgit.com/nick-freeman/4ac4f363107d3c65ad9a13813dce5625/raw/adcbf9eee5e51cbbe641ccfe2e9ba04380a68db3/prism.css" rel="stylesheet">
+</head>
+
+<body class="post-template">
+    <div id="site-wrapper" class="c-site-wrapper">
+        <div id="site-viewport" class="c-site-viewport">
+            <div id="site-sidebar" class="c-site-sidebar">
+    <div class="c-sidebar-header" style="background-image: url(https://casper.ghost.org/v1.0.0/images/blog-cover.jpg)">
+        <a class="c-sidebar-header__link" href="../" title="Nick Freeman">
+            <img class="c-sidebar-header__image" src="../content/images/2017/10/01.png" alt="Nick Freeman">
+        </a>
+    </div>
+
+    <h2 class="c-sidebar-blog-title">
+        <a class="c-sidebar-blog-title__link" href="../" title="Nick Freeman">
+            Nick Freeman
+        </a>
+    </h2>
+
+    <h2 class="c-sidebar-blog-description">
+        Full-Stack Developer
+    </h2>
+
+    <div class="c-sidebar-contact-links">
+        <a class="c-sidebar-contact-links__item" href="index.html#" target="_blank">
+            github
+        </a>
+
+        <a class="c-sidebar-contact-links__item" href="index.html#" target="_blank">
+            twitter
+        </a>
+
+        <a class="c-sidebar-contact-links__item" href="index.html#" target="_blank">
+            linkedin
+        </a>
+
+        <a class="c-sidebar-contact-links__item" href="index.html#">
+            email
+        </a>
+    </div>
+
+    <div class="c-sidebar-navigation">
+        <a class="c-sidebar-navigation__item" href="http://blog.nfreeman.pw/" title="Less words, more data">
+            Less words, more data
+        </a>
+</div>
+
+    <div class="c-sidebar-promotion-links">
+        <a class="c-sidebar-promotion-links__item" href="index.html#" target="_blank">
+            • Link
+        </a>
+
+        <a class="c-sidebar-promotion-links__item" href="index.html#" target="_blank">
+            • Link
+        </a>
+    </div>
+</div>
+            <div id="site-content" class="c-site-content">
+                <div class="c-mobile-header">
+    <a href="index.html#" id="mobile-menu" class="c-mobile-header__link" title="Menu">
+        Menu
+    </a>
+
+    <a class="c-mobile-header__logo" href="../" title="Nick Freeman">
+        <img class="c-mobile-header__logo__image" src="../content/images/2017/10/01.png" alt="Nick Freeman">
+    </a>
+</div>                    <div class="c-post-view post">
+        <div class="c-page-title">
+            <h1 class="c-page-title__heading">
+                Docker4Dev: Часть 1. Основные концепции
+            </h1>
+
+            <div class="c-post-view-meta">
+    August 23, 2017
+
+</div>        </div>
+
+        <div class="c-post-view__content">
+            <div class="kg-card-markdown"><p>Эта статья - первая в цикле статей про использование Docker для разработки и в ней я предлагаю рассмотреть важные концепции и правила экосистемы Docker, которых следует придерживаться для избежания различных проблем.</p>
+<hr>
+<h1 id="">Один контейнер - одна сущность</h1>
+<p>Если вы встречали упоминания о том, что в контейнере должен быть запущен обязательно один процесс, то это не так. Философия Docker предрасполагает к микросервисной архитектуре, но не к принудительному разделению процессов по контейнерам. Если вы твердо уверены, что в вашем случае необходимо держать N+1 процессов в одном контейнере, дерзайте! Но в таком случае хотя бы позаботьтесь о наличии супервизора для корректного наследования процессов(предотвращения появления зомби-процессов) и их корректного завершения.</p>
+<hr>
+<h1 id="">Контейнеры должны быть эфемерными(одноразовыми)</h1>
+<p>Контейнеры не должны хранить состояние приложение и всегда быть готовыми к тому, что их сейчас уничтожат и создадут новую копию. Все данные, которые изменяются в процессе работы, необходимо хранить таким образом, чтобы при остановке контейнера они остались целыми. Это правило заставлят задуматься над тем, как организовать работу БД приложения.</p>
+<hr>
+<h1 id="">Изолированность</h1>
+<p>Docker дает замечательную возможность построить систему, где каждый элемент имеет доступ ровно к тому, что ему необходимо. Вы можете открыть нужные порты, используя UID/GID назначить пользователям из контейнера доступ только к определенным папкам на хосте, ограничить контейнер определенной сетью.</p>
+<hr>
+<h1 id="">Управление ресурсами</h1>
+<p>Кроме ограничения доступа, вы можете с легкостью указать количество памяти, ограничить доступ к ядрам CPU или задать "вес" процесса при доступе к CPU. Чтобы понять сколько ресурсов требуется приложению, используйте метрики приложения.</p>
+<hr>
+<h1 id="">Версионирование</h1>
+<p>Во время разработки зависимости необходимые для проекта могут обновляться, добавляться или удаляться. И бывает такое, что необходимо запустить код годичной давности. С Docker это очень просто! Просто используйте версионирование для своих образов, и храните готовое к запуску окружение в docker-registry, за секунды получая нужное окружение.</p>
+<hr>
+<h1 id="">Следите за безопасностью</h1>
+<p>Здравствуйте, вы в Интернете!</p>
+<ul>
+<li>Никому не доверяйте</li>
+<li>Если вы решили использовать чей-то готовый образ, то используйте только <a href="https://hub.docker.com/explore/">доверенные образы Docker</a></li>
+<li>Не работайте под root даже внутри контейнера</li>
+<li>Если приложение позволяет, используйте в качестве базового образа легковесный alpine, в котором нет лишних зависимостей и, соответственно, принесенных ими потенциальных уязвимостей</li>
+<li>Удаляйте ненужные зависимости после сборки</li>
+<li>Следите за обновлениями родительских образов и зависимостей и своевременно обновляйтесь</li>
+</ul>
+<hr>
+<h1 id="">Логи</h1>
+<p>Анализ логов предоставляет возможность получить информацию об ошибках, безопасности, проводить A/B тестирование, анализировать производительность и нагрузку. Т.е. сложно переоценить ценность логов.<br>
+Но поскольку Docker - многоуровневая сущность, то обработка логов даже для простого приложения - нетривиальная задача.<br>
+Популярным решением является ELK-стек.</p>
+<hr>
+<p>Статья дополняется...</p>
+</div>
+        </div>
+
+        <div class="c-post-view__footer">
+            <div class="c-post-view-share">
+    <a class="c-post-view-share__item c-post-view-share__item--twitter" href="https://twitter.com/intent/tweet?text=Docker4Dev%3A%20%D0%A7%D0%B0%D1%81%D1%82%D1%8C%201.%20%D0%9E%D1%81%D0%BD%D0%BE%D0%B2%D0%BD%D1%8B%D0%B5%20%D0%BA%D0%BE%D0%BD%D1%86%D0%B5%D0%BF%D1%86%D0%B8%D0%B8&amp;url=http://localhost:2368/mastering-docker-vazhnyie-momienty/" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        Share on Twitter
+    </a>
+    <a class="c-post-view-share__item c-post-view-share__item--facebook" href="https://www.facebook.com/sharer/sharer.php?u=http://localhost:2368/mastering-docker-vazhnyie-momienty/" onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        Share on Facebook
+    </a>
+    <a class="c-post-view-share__item c-post-view-share__item--google" href="https://plus.google.com/share?url=http://localhost:2368/mastering-docker-vazhnyie-momienty/" onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+        Share on Google+
+    </a>
+</div>            <div class="c-post-view-prev-next">
+            <article class="c-post-view-prev-next__item post">
+                <a class="c-post-view-prev-next__image" href="../docker4dev-chast-2/" title="Docker4Dev: Часть 2. Правильная сборка образов">
+                    <img class="c-post-view-prev-next__image__img" src="../content/images/2017/10/14098888813_1047e39f08--1--1.jpg" alt="Docker4Dev: Часть 2. Правильная сборка образов">
+                    <span class="c-post-view-prev-next__image__label c-post-view-prev-next__image__label--next">
+                        Next Post
+                    </span>
+                </a>
+
+                <h3 class="c-post-view-prev-next__title">
+                    <a href="../docker4dev-chast-2/" title="Docker4Dev: Часть 2. Правильная сборка образов">Docker4Dev: Часть 2. Правильная сборка образов</a>
+                </h3>
+            </article>
+
+            <article class="c-post-view-prev-next__item">
+                <div class="c-post-view-prev-next__image c-post-view-prev-next__image--placeholder">
+                    <span class="c-post-view-prev-next__image__label c-post-view-prev-next__image__label--previous">
+                        No Older Posts
+                    </span>
+                </div>
+            </article>
+</div>            <!--<div class="c-disqus-comments">
+    <div id="disqus_thread">
+        <a class="c-disqus-comments__button" onclick="WillowGhostTheme.loadDisqusComments();">
+            Load Comments
+        </a>
+    </div>
+    <script>
+        var WillowGhostTheme = {
+            loadDisqusComments: function () {
+
+                var d = document, s = d.createElement('script');
+                s.src = '//yourssite.disqus.com/embed.js';
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+
+            }
+        };
+    </script>
+</div>-->
+        </div>
+    </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/scripts.js?v=cad2a2774a"></script>
+    <script type="text/javascript" src="https://cdn.rawgit.com/nick-freeman/4263a9215bc3153c0a8cb44339260c64/raw/14ce0454b32fb236a1b6c21d139d2421e69abdbf/prism.js"></script>
+</body>

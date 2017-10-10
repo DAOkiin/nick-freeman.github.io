@@ -1,0 +1,295 @@
+
+<head>
+    <meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+<title>Docker4Dev: Часть 2. Правильная сборка образов</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<link rel="stylesheet" type="text/css" href="../assets/css/styles.css?v=cad2a2774a">
+<link href="https://fonts.googleapis.com/css?family=Merriweather:400,700,700italic,400italic" rel="stylesheet">
+    <link rel="shortcut icon" href="../favicon.png" type="image/png">
+    <link rel="canonical" href="index.html">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <link rel="amphtml" href="amp/index.html">
+    
+    <meta property="og:site_name" content="Nick Freeman">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Docker4Dev: Часть 2. Правильная сборка образов">
+    <meta property="og:description" content="В этой статье я собрал best practice по сборке образов в контексте микросервисной архитектуры. Минимизируйте размер образа Меньше образ - меньше времени тратится на разработку, тестирование и деплой. Минимальное количество слоев Минимизация количества слоёв считается одной из best practice при работе с Docker. В самом Docker, в качестве защиты от">
+    <meta property="og:url" content="http://localhost:2368/docker4dev-chast-2/">
+    <meta property="og:image" content="http://localhost:2368/content/images/2017/10/14098888813_1047e39f08--1--1.jpg">
+    <meta property="article:published_time" content="2017-08-24T18:31:56.000Z">
+    <meta property="article:modified_time" content="2017-10-10T11:52:27.000Z">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Docker4Dev: Часть 2. Правильная сборка образов">
+    <meta name="twitter:description" content="В этой статье я собрал best practice по сборке образов в контексте микросервисной архитектуры. Минимизируйте размер образа Меньше образ - меньше времени тратится на разработку, тестирование и деплой. Минимальное количество слоев Минимизация количества слоёв считается одной из best practice при работе с Docker. В самом Docker, в качестве защиты от">
+    <meta name="twitter:url" content="http://localhost:2368/docker4dev-chast-2/">
+    <meta name="twitter:image" content="http://localhost:2368/content/images/2017/10/14098888813_1047e39f08--1--1.jpg">
+    <meta name="twitter:label1" content="Written by">
+    <meta name="twitter:data1" content="Nick Freeman">
+    <meta property="og:image:width" content="400">
+    <meta property="og:image:height" content="331">
+    
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": "Nick Freeman",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "http://localhost:2368/content/images/2017/10/01.png",
+            "width": 60,
+            "height": 60
+        }
+    },
+    "author": {
+        "@type": "Person",
+        "name": "Nick Freeman",
+        "url": "http://localhost:2368/author/nick/",
+        "sameAs": []
+    },
+    "headline": "Docker4Dev: Часть 2. Правильная сборка образов",
+    "url": "http://localhost:2368/docker4dev-chast-2/",
+    "datePublished": "2017-08-24T18:31:56.000Z",
+    "dateModified": "2017-10-10T11:52:27.000Z",
+    "image": {
+        "@type": "ImageObject",
+        "url": "http://localhost:2368/content/images/2017/10/14098888813_1047e39f08--1--1.jpg",
+        "width": 400,
+        "height": 331
+    },
+    "description": "В этой статье я собрал best practice по сборке образов в контексте микросервисной архитектуры. Минимизируйте размер образа Меньше образ - меньше времени тратится на разработку, тестирование и деплой. Минимальное количество слоев Минимизация количества слоёв считается одной из best practice при работе с Docker. В самом Docker, в качестве защиты от",
+    "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "http://localhost:2368/"
+    }
+}
+    </script>
+
+    <script type="text/javascript" src="../public/ghost-sdk.js?v=cad2a2774a"></script>
+<script type="text/javascript">
+ghost.init({
+	clientId: "ghost-frontend",
+	clientSecret: "f0656e80b35b"
+});
+</script>
+    <meta name="generator" content="Ghost 1.9">
+    <link rel="alternate" type="application/rss+xml" title="Nick Freeman" href="../rss/index.html">
+    <link href="https://cdn.rawgit.com/nick-freeman/4ac4f363107d3c65ad9a13813dce5625/raw/adcbf9eee5e51cbbe641ccfe2e9ba04380a68db3/prism.css" rel="stylesheet">
+</head>
+
+<body class="post-template">
+    <div id="site-wrapper" class="c-site-wrapper">
+        <div id="site-viewport" class="c-site-viewport">
+            <div id="site-sidebar" class="c-site-sidebar">
+    <div class="c-sidebar-header" style="background-image: url(https://casper.ghost.org/v1.0.0/images/blog-cover.jpg)">
+        <a class="c-sidebar-header__link" href="../" title="Nick Freeman">
+            <img class="c-sidebar-header__image" src="../content/images/2017/10/01.png" alt="Nick Freeman">
+        </a>
+    </div>
+
+    <h2 class="c-sidebar-blog-title">
+        <a class="c-sidebar-blog-title__link" href="../" title="Nick Freeman">
+            Nick Freeman
+        </a>
+    </h2>
+
+    <h2 class="c-sidebar-blog-description">
+        Full-Stack Developer
+    </h2>
+
+    <div class="c-sidebar-contact-links">
+        <a class="c-sidebar-contact-links__item" href="index.html#" target="_blank">
+            github
+        </a>
+
+        <a class="c-sidebar-contact-links__item" href="index.html#" target="_blank">
+            twitter
+        </a>
+
+        <a class="c-sidebar-contact-links__item" href="index.html#" target="_blank">
+            linkedin
+        </a>
+
+        <a class="c-sidebar-contact-links__item" href="index.html#">
+            email
+        </a>
+    </div>
+
+    <div class="c-sidebar-navigation">
+        <a class="c-sidebar-navigation__item" href="http://blog.nfreeman.pw/" title="Less words, more data">
+            Less words, more data
+        </a>
+</div>
+
+    <div class="c-sidebar-promotion-links">
+        <a class="c-sidebar-promotion-links__item" href="index.html#" target="_blank">
+            • Link
+        </a>
+
+        <a class="c-sidebar-promotion-links__item" href="index.html#" target="_blank">
+            • Link
+        </a>
+    </div>
+</div>
+            <div id="site-content" class="c-site-content">
+                <div class="c-mobile-header">
+    <a href="index.html#" id="mobile-menu" class="c-mobile-header__link" title="Menu">
+        Menu
+    </a>
+
+    <a class="c-mobile-header__logo" href="../" title="Nick Freeman">
+        <img class="c-mobile-header__logo__image" src="../content/images/2017/10/01.png" alt="Nick Freeman">
+    </a>
+</div>                    <div class="c-post-view post">
+        <div class="c-page-title">
+            <h1 class="c-page-title__heading">
+                Docker4Dev: Часть 2. Правильная сборка образов
+            </h1>
+
+            <div class="c-post-view-meta">
+    August 24, 2017
+
+</div>        </div>
+
+        <div class="c-post-view__content">
+            <div class="kg-card-markdown"><p>В этой статье я собрал <em>best practice</em> по сборке образов в контексте микросервисной архитектуры.</p>
+<hr>
+<h1 id="">Минимизируйте размер образа</h1>
+<p>Меньше образ - меньше времени тратится на разработку, тестирование и деплой.</p>
+<h3 id="">Минимальное количество слоев</h3>
+<p>Минимизация количества слоёв считается одной из best practice при работе с Docker. В самом Docker, в качестве защиты от деградации производительности, количество слоёв ограничено числом <strong>127</strong>.</p>
+<h3 id="">Минимальный размер слоя</h3>
+<p>Каждая команда создает новый слой в финальном образе.<br>
+Удалить файл из образа полностью можно только в пределах одного слоя, т.е. удаление файла в последующих слоях просто сделает его недоступным, не уменьшая размер образа.</p>
+<pre><code class="language-docker">#Неверно
+RUN apt-get -qq update
+RUN apt-get install -qq -y some-dependency
+RUN ...
+RUN apt-get remove -qq -y some-dependency
+
+#Верно
+RUN apt-get -qq update \
+ &amp;&amp; apt-get install -qq -y some-dependency \
+ &amp;&amp; ... \
+ &amp;&amp; apt-get remove -qq -y some-dependency  
+</code></pre>
+<p>Невозможность удаления файла в последующих слоях так же относится к командам <code>ADD</code> \ <code>COPY</code>. Если есть необходимость копировать какие-то файлы, обрабатывать их и оставлять в контейнере только результат работы, то используйте multistage builds.<br>
+Также не стоит добавлять те файлы, которые не требуются для работы приложения, не забывайте про использование <code>.dockerignore</code>.</p>
+<h3 id="baseimage">Минимальный размер baseimage</h3>
+<p>Используйте в качестве основы для своего образа Alpine Linux, дистрибутив размером около 4MB, ориентированный на безопасность, легковесность и нетребовательность к ресурсам.</p>
+<hr>
+<h1 id="root">Не сидите под root</h1>
+<p>Большинство образов доступных в docker hub собирается из под root, привнося с собой проблемы с правами в shared volumes и потенциальные проблемы с безопасностью. Создавайте пользователя с нужными UID/GID во время сборки образа и следите за правами доступа этого UID за пределами контейнера.</p>
+<hr>
+<h1 id="entrypoint">Не забывайте про entrypoint</h1>
+<p>При написании Dockerfile для указания точки входа в контейнер возможно использовать команды ENTRYPOINT и CMD. Но между ними есть существенные различия.<br>
+Разница заключается в том, что ENTRYPOINT более полно отвечает понятию "точка входа". ENTRYPOINT принимает в качестве аргумента команду указанную при старте контейнера или, в случае отсутствия онной, команду указанную в CMD. Ну или в случае отсутствия CMD просто выполнится ENTRYPOINT. ENTRYPOINT дает множество возможностей управления поведением контейнера при старте, например с помощью shell-скрипта можно явно указать разрешённые команды.</p>
+<pre><code class="language-docker">FROM alpine
+COPY ./entrypoint.sh /
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+</code></pre>
+<pre><code class="language-bash">#!/bin/sh
+echo "Starting with UID : $(id -u $whoami)"
+echo "$@"  # $@ - команда, переданная в entrypoint.sh
+if [ $1 = 'echo' ]; then  # $1 - первый аргумент
+  exec "$@" 
+else
+  echo 'Invalid command'
+fi
+</code></pre>
+<pre><code class="language-bash">╰─&gt; docker run --rm -it test:latest echo 'hello'
+  Starting with UID : 0
+  echo hello
+  hello
+╰─&gt; docker run --rm -it test:latest whoami
+  Starting with UID : 0
+  whoami
+  Invalid command
+</code></pre>
+<p>Важно помнить, что предпочтительной формой для команд <code>ENTRYPOINT</code> и <code>CMD</code> является форма <em>exec</em>, а не <em>shell</em></p>
+<pre><code class="language-docker"># Два режима работы: Shell &amp; Exec
+# Формат shell
+ENTRYPOINT echo "Starting with UID : $(id -u $whoami)"
+CMD echo "Hello there"
+
+# Формат exec, более предпочтительный по целому ряду причин
+ENTRYPOINT ["echo", "Starting with UID : $(id -u $whoami)"]
+CMD ["echo", "Hello $(whoami)!"]
+</code></pre>
+<h1 id="">Используйте переменные окружения во время сборки</h1>
+<p>Команда <code>ARG</code> в Dockerfile позволяет передать некие переменные в образ во время его сборки. Это может быть указание версии, текущее время или любая переменная окружения по вашему желанию.<br>
+<code>ВНИМАНИЕ! Не используйте эту фичу для передачи секретной информации в образ! Все команды Dockerfile публичны!</code></p>
+</div>
+        </div>
+
+        <div class="c-post-view__footer">
+            <div class="c-post-view-share">
+    <a class="c-post-view-share__item c-post-view-share__item--twitter" href="https://twitter.com/intent/tweet?text=Docker4Dev%3A%20%D0%A7%D0%B0%D1%81%D1%82%D1%8C%202.%20%D0%9F%D1%80%D0%B0%D0%B2%D0%B8%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F%20%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0%20%D0%BE%D0%B1%D1%80%D0%B0%D0%B7%D0%BE%D0%B2&amp;url=http://localhost:2368/docker4dev-chast-2/" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        Share on Twitter
+    </a>
+    <a class="c-post-view-share__item c-post-view-share__item--facebook" href="https://www.facebook.com/sharer/sharer.php?u=http://localhost:2368/docker4dev-chast-2/" onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        Share on Facebook
+    </a>
+    <a class="c-post-view-share__item c-post-view-share__item--google" href="https://plus.google.com/share?url=http://localhost:2368/docker4dev-chast-2/" onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+        Share on Google+
+    </a>
+</div>            <div class="c-post-view-prev-next">
+            <article class="c-post-view-prev-next__item post">
+                <a class="c-post-view-prev-next__image" href="../docker4dev-chast-3/" title="Docker4Dev: Часть 3.  Ежедневные советы">
+                    <img class="c-post-view-prev-next__image__img" src="../content/images/2017/10/14098888813_1047e39f08--1--2.jpg" alt="Docker4Dev: Часть 3.  Ежедневные советы">
+                    <span class="c-post-view-prev-next__image__label c-post-view-prev-next__image__label--next">
+                        Next Post
+                    </span>
+                </a>
+
+                <h3 class="c-post-view-prev-next__title">
+                    <a href="../docker4dev-chast-3/" title="Docker4Dev: Часть 3.  Ежедневные советы">Docker4Dev: Часть 3.  Ежедневные советы</a>
+                </h3>
+            </article>
+
+            <article class="c-post-view-prev-next__item post">
+                <a class="c-post-view-prev-next__image" href="../mastering-docker-vazhnyie-momienty/" title="Docker4Dev: Часть 1. Основные концепции">
+                    <img class="c-post-view-prev-next__image__img" src="../content/images/2017/10/14098888813_1047e39f08--1-.jpg" alt="Docker4Dev: Часть 1. Основные концепции">
+                    <span class="c-post-view-prev-next__image__label c-post-view-prev-next__image__label--previous">
+                        Previous Post
+                    </span>
+                </a>
+
+                <h3 class="c-post-view-prev-next__title">
+                    <a href="../mastering-docker-vazhnyie-momienty/" title="Docker4Dev: Часть 1. Основные концепции">Docker4Dev: Часть 1. Основные концепции</a>
+                </h3>
+            </article>
+</div>            <!--<div class="c-disqus-comments">
+    <div id="disqus_thread">
+        <a class="c-disqus-comments__button" onclick="WillowGhostTheme.loadDisqusComments();">
+            Load Comments
+        </a>
+    </div>
+    <script>
+        var WillowGhostTheme = {
+            loadDisqusComments: function () {
+
+                var d = document, s = d.createElement('script');
+                s.src = '//yourssite.disqus.com/embed.js';
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+
+            }
+        };
+    </script>
+</div>-->
+        </div>
+    </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/scripts.js?v=cad2a2774a"></script>
+    <script type="text/javascript" src="https://cdn.rawgit.com/nick-freeman/4263a9215bc3153c0a8cb44339260c64/raw/14ce0454b32fb236a1b6c21d139d2421e69abdbf/prism.js"></script>
+</body>
